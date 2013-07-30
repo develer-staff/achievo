@@ -299,7 +299,28 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                          "timesummary" => &$timesummary);
         }
     }
-
+    function get_active_users($date_start)
+    {
+        $userid = $this->m_user;
+        if ($userid=="all") {
+            $db = &atkGetDb();
+            $select = "
+                SELECT DISTINCT usercontract.userid FROM usercontract
+                    JOIN person ON usercontract.userid = person.id
+                WHERE startdate <= '$date_start'
+                    AND '$date_start' < enddate
+                    AND description NOT LIKE '%NO PRESENZE%'
+                ORDER BY ABS(person.initials)
+            ";
+            $users = array();
+            foreach($db->getRows($select) as $r) {
+                $users[] = $r['userid'];
+            }
+        } else {
+            $users = array($userid);
+        }
+        return $users;
+    }
     function action_report(&$handler, $userid=null, &$timesummary=null, $export=false)
     {
         if (!$userid) {
@@ -311,6 +332,31 @@ GROUP BY id, userid, firstname, lastname, activitydate;
         $hours_table = $this->get_hours_table($userid, $timesummary, $export);
         $content = $hours_table['content'];
         $timesummary = $hours_table['timesummary'];
+
+        /*
+        Affinche' il conteggio degli straordinari funzioni correttamente
+        e' necessario che:
+         * il giorno in cui si calcola il credito/debito di ore all'inizio
+         del range selezionato sia l'ultimo del mese precedente.
+         * il giorno in cui si calcola il credito/debito di ore alla fine
+         del bilancio sia l'ultimo del mese in corso.
+
+        Pertanto i valori di date_start e date_end sono modificati per
+        rispecchiare queste specifiche.
+
+        NOTE: queste modifica ha come requisito l'eliminazione dei check
+        inseriti da lmancini nella revisione r28891. Questo potrebbe
+        portare a malfunzionamenti. Ergo, prima di inserire le modifiche
+        sull'achievo in produzione sarebbe raccomandabile il testarlo. A
+        fondo.
+        */
+        $date_start = date_create($timesummary["date_start"]);
+        $date_start->modify("-1 day");
+        $date_start = format_date($date_start);
+
+        $date_end = date_create($timesummary["date_end"]);
+        $date_end->modify("-1 day");
+        $date_end = format_date($date_end);
 
         if ($userid!="all") {
             // Tabelle banca ore
@@ -324,31 +370,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $content .= "<table border='1'>\n";
                 $content .= $banca_head;
 
-                /*
-                Affinche' il conteggio degli straordinari funzioni correttamente
-                e' necessario che:
-                 * il giorno in cui si calcola il credito/debito di ore all'inizio
-                 del range selezionato sia l'ultimo del mese precedente.
-                 * il giorno in cui si calcola il credito/debito di ore alla fine
-                 del bilancio sia l'ultimo del mese in corso.
-
-                Pertanto i valori di date_start e date_end sono modificati per
-                rispecchiare queste specifiche.
-
-                NOTE: queste modifica ha come requisito l'eliminazione dei check
-                inseriti da lmancini nella revisione r28891. Questo potrebbe
-                portare a malfunzionamenti. Ergo, prima di inserire le modifiche
-                sull'achievo in produzione sarebbe raccomandabile il testarlo. A
-                fondo.
-                */
-                $date_start = date_create($timesummary["date_start"]);
-                $date_start->modify("-1 day");
-                $date_start = format_date($date_start);
                 $userdata['date_start']['balance'] = $this->overtime_node->getBalance($date_start, $userdata['id'], true);
-
-                $date_end = date_create($timesummary["date_end"]);
-                $date_end->modify("-1 day");
-                $date_end = format_date($date_end);
                 $userdata['date_end']['balance'] = $this->overtime_node->getBalance($date_end, $userdata['id']);
 
                 $banca_ore = $userdata['date_start']['balance']['balance'] + $userdata['tot_worked'];
@@ -505,6 +527,18 @@ GROUP BY id, userid, firstname, lastname, activitydate;
             }
         } else {
             $content .= "<p><i>Sono stati selezionati tutti gli utenti, e' possibile solo scaricare il foglio di calcolo.</i></p>";
+            $users = $this->get_active_users($timesummary["date_start"]);
+            $content .= "<ul>";
+            foreach($users as $iuserid) {
+                $lock = !(Locking::getLockType($iuserid, $date_end) === "");
+                $message = $lock ? "Bloccate" : "da bloccare";
+                $style = $lock ? "" : "font-weight: bold";
+                $userinfo = $this->weekreport_node->get_employee($iuserid);
+                if ($userinfo['id'] != $iuserid)
+                    continue;
+                $content .= "<li><span style='$style'>" . $userinfo['lastname']." ".$userinfo['firstname'] . "</span> - $message</li>";
+            }
+            $content .= "</ul>";
         }
 
         $content .= "<p>Pagina creata il ".date_create()->format("Y-m-d")."</p>\n";
@@ -537,23 +571,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
 
         $date_start = $timesummary["date_start"];
 
-        if ($userid=="all") {
-            $db = &atkGetDb();
-            $select = "
-                SELECT DISTINCT usercontract.userid FROM usercontract
-                    JOIN person ON usercontract.userid = person.id
-                WHERE startdate <= '$date_start'
-                    AND '$date_start' < enddate
-                    AND description NOT LIKE '%NO PRESENZE%'
-                ORDER BY ABS(person.initials)
-            ";
-            $users = array();
-            foreach($db->getRows($select) as $r) {
-                $users[] = $r['userid'];
-            }
-        } else {
-            $users = array($userid);
-        }
+        $users = $this->get_active_users($date_start);
 
         $excel = new excel_xml();
         $title_style = array(
