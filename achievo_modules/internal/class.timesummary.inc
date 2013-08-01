@@ -8,6 +8,7 @@
  */
 
 useattrib("atkdateattribute");
+atkimport("module.timereg.locking");
 
 
 function get_IVA($date)
@@ -94,6 +95,7 @@ class timesummary extends atkNode
 
         $select = "
                 SELECT
+                    person.id,
                     person.userid,
                     project.name AS prj,
                     sum(hours.time)/60.0 as ore,
@@ -182,7 +184,7 @@ class timesummary extends atkNode
                     $gprogetti[$r['gprj']] = array("ore" => 0.0, "euro" => 0.0);
                 }
                 if (!array_key_exists($r['userid'], $persone)) {
-                    $persone[$r['userid']] = array("ore" => 0.0, "euro" => 0.0, "euro_ora" => 0.0, "lastmod" => "0000-00-00");
+                    $persone[$r['userid']] = array('id' => $r['id'], "ore" => 0.0, "euro" => 0.0, "euro_ora" => 0.0, "lastmod" => "0000-00-00");
                 }
                 $progetti[$r['prj']]['ore'] += $r['ore'];
                 if (!$r['billable']) {
@@ -248,7 +250,7 @@ class timesummary extends atkNode
         $content .= "</td><td>";
             // Tabella ore per persona
             $content .= "<table border='1'><tr><th>Totale persona</th><th>ore</th><th>euro/ora</th>";
-            $content .= "<th>euro</th><th>IVA (".str_number_format(100*$IVA, 0)."%)</th><th>Ivato</th><th>Modificato</th></tr>";
+            $content .= "<th>euro</th><th>IVA (".str_number_format(100*$IVA, 0)."%)</th><th>Ivato</th><th>Modificato</th><th>Bloccato</th></tr>";
             $totale_ore_develer = 0;
             foreach ($persone as $key => $pers)
             {
@@ -263,11 +265,15 @@ class timesummary extends atkNode
                 $content .= "<td align='right'>".str_number_format($pers['euro']*$IVA, 2)."</td>";     // IVA
                 $content .= "<td align='right'>".str_number_format($pers['euro']*(1+$IVA), 2)."</td>"; // ivato
                 $content .= "<td>".$pers['lastmod']."</td>";
+                $date_lock = date_create($results["date_end"]);
+                $date_lock->modify("-1 day");
+                $lock = !(Locking::getLockType($pers['id'], $date_lock->format("Y-m-d")) === "") ? "OK" : "-";
+                $content .= "<td>$lock</td>";
                 $content .= "</tr>\n";
                 $totale_ore_develer += $pers['ore'];
             }
             $content .= "<th>Totale</th><td align='right'>".str_number_format($totale_ore_develer, 2)."</td>";
-            $content .= "<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>\n";
+            $content .= "<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>\n";
             $content .= "</table>";
         $content .= "</td></tr></table>";
 
