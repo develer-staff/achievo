@@ -299,7 +299,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                          "timesummary" => &$timesummary);
         }
     }
-    function get_active_users($date_start)
+    function get_active_users($date_start, $date_end)
     {
         $userid = $this->m_user;
         if ($userid=="all") {
@@ -307,8 +307,8 @@ GROUP BY id, userid, firstname, lastname, activitydate;
             $select = "
                 SELECT DISTINCT usercontract.userid FROM usercontract
                     JOIN person ON usercontract.userid = person.id
-                WHERE startdate <= '$date_start'
-                    AND '$date_start' < enddate
+                WHERE
+                    NOT (enddate < '$date_start' OR '$date_end' < startdate)
                     AND description NOT LIKE '%NO PRESENZE%'
                 ORDER BY ABS(person.initials)
             ";
@@ -527,7 +527,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
             }
         } else {
             $content .= "<p><i>Sono stati selezionati tutti gli utenti, e' possibile solo scaricare il foglio di calcolo.</i></p>";
-            $users = $this->get_active_users($timesummary["date_start"]);
+            $users = $this->get_active_users($timesummary["date_start"], $timesummary["date_end"]);
             $content .= "<ul>";
             foreach($users as $iuserid) {
                 $lock = !(Locking::getLockType($iuserid, $date_end) === "");
@@ -570,8 +570,9 @@ GROUP BY id, userid, firstname, lastname, activitydate;
         $report_time = strtotime($timesummary["date_start"]);
 
         $date_start = $timesummary["date_start"];
+        $date_end = $timesummary["date_end"];
 
-        $users = $this->get_active_users($date_start);
+        $users = $this->get_active_users($date_start, $date_end);
 
         $excel = new excel_xml();
         $title_style = array(
