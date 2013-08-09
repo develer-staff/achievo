@@ -286,9 +286,9 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $time_balance[$r['userid']]['tot_tickets'] += $activitydate['tickets'];
 
                 $time_balance[$r['userid']]['activity'][$r['activitydate']]['totale_parziale_worked'] = $time_balance[$r['userid']]['tot_worked'];
-                atkdebug("TimeBalance loop: ".var_export($r, 1));
+                //atkdebug("TimeBalance loop: ".var_export($r, 1));
             }
-            atkdebug("TimeBalance: ".var_export($time_balance, 1));
+            //atkdebug("TimeBalance: ".var_export($time_balance, 1));
             return array("content" => $content,
                          "time_balance" => $time_balance,
                          "title" => $title,
@@ -299,7 +299,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                          "timesummary" => &$timesummary);
         }
     }
-    function get_active_users($date_start, $date_end)
+    function get_active_employees($date_start, $date_end)
     {
         $userid = $this->m_user;
         if ($userid=="all") {
@@ -480,8 +480,8 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 parte.
                 */
                 $content .= "<b>Banca ore al ".$timesummary["date_end"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_end'])."<br>";
-                atkdebug("userdata['overtime_balance']=".$userdata['overtime_balance']);
-                atkdebug("userdata['date_end']['balance']['balance']=".$userdata['date_end']['balance']['balance']);
+                //atkdebug("userdata['overtime_balance']=".$userdata['overtime_balance']);
+                //atkdebug("userdata['date_end']['balance']['balance']=".$userdata['date_end']['balance']['balance']);
                 $userdata['straordinari'] = max($userdata['overtime_balance'] - max($userdata['date_end']['balance']['balance'], 0.0), 0.0);
                 $content .= "<b>Straordinari:</b> ".float2str($userdata['straordinari'])."<br>";
                 $content .= "<b>Ore Previste:</b> ".float2str($userdata['tot_contract'])."<br>";
@@ -527,7 +527,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
             }
         } else {
             $content .= "<p><i>Sono stati selezionati tutti gli utenti, e' possibile solo scaricare il foglio di calcolo.</i></p>";
-            $users = $this->get_active_users($timesummary["date_start"], $timesummary["date_end"]);
+            $users = $this->get_active_employees($timesummary["date_start"], $timesummary["date_end"]);
             $content .= "<ul>";
             foreach($users as $iuserid) {
                 $lock = !(Locking::getLockType($iuserid, $date_end) === "");
@@ -572,7 +572,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
         $date_start = $timesummary["date_start"];
         $date_end = $timesummary["date_end"];
 
-        $users = $this->get_active_users($date_start, $date_end);
+        $users = $this->get_active_employees($date_start, $date_end);
 
         $excel = new excel_xml();
         $title_style = array(
