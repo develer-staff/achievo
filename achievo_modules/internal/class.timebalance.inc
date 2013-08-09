@@ -205,12 +205,12 @@ GROUP BY id, userid, firstname, lastname, activitydate;
         if (!$timesummary) {
             $timesummary = $this->get_timesummary($userid);
         }
-        $content = '<form action="dispatch.php" method="get" name="entryform">';
+        $content = array('<form action="dispatch.php" method="get" name="entryform">');
         $title = "TimeBalance: ".$timesummary["date_start"]." - ".$timesummary["date_end"]." (escluso)";
 
         if (!$export) {
             $this->addStyle("style.css");
-            $content .= session_form();
+            $content[] = session_form();
 
             $startdateatt = new atkDateAttribute("date_start", "F d Y", "d F Y",0 , 0, AF_OBLIGATORY);
             $enddateatt = new atkDateAttribute("date_end", "F d Y", "d F Y", 0, 0, AF_OBLIGATORY);
@@ -218,14 +218,14 @@ GROUP BY id, userid, firstname, lastname, activitydate;
             $_startdate = array("date_start" => $startdateatt->dateArray($timesummary["date_start"]));
             $_enddate = array("date_end" => $enddateatt->dateArray($timesummary["date_end"]));
 
-            $content .= "Da ".$startdateatt->edit($_startdate)." a ".$enddateatt->edit($_enddate)."<br>\n";
-            $content .= '<input type="button" onclick="ATK.DateAttribute.modifyValue(\'date_start\', {month: \'+1\'}); ATK.DateAttribute.modifyValue(\'date_end\', {month: \'+1\'})" value="Mese+" />';
-            $content .= '<input type="button" onclick="ATK.DateAttribute.modifyValue(\'date_start\', {month: \'-1\'}); ATK.DateAttribute.modifyValue(\'date_end\', {month: \'-1\'})" value="Mese-" />';
+            $content[] = "Da ".$startdateatt->edit($_startdate)." a ".$enddateatt->edit($_enddate)."<br>\n";
+            $content[] = '<input type="button" onclick="ATK.DateAttribute.modifyValue(\'date_start\', {month: \'+1\'}); ATK.DateAttribute.modifyValue(\'date_end\', {month: \'+1\'})" value="Mese+" />';
+            $content[] = '<input type="button" onclick="ATK.DateAttribute.modifyValue(\'date_start\', {month: \'-1\'}); ATK.DateAttribute.modifyValue(\'date_end\', {month: \'-1\'})" value="Mese-" />';
             $weekreport = &atkGetNode("reports.weekreport");
-            if ($this->allowed("any_user")) $content .= 'User: <SELECT name="userid">'.$weekreport->get_employees($userid, $key="lastname").'</SELECT>';
-            $content .= '<input type="submit" value="'.atktext("refresh").'">';
-            $content .= '</form>';
-            $content .= "<h2>$title</h2>\n";
+            if ($this->allowed("any_user")) $content[] = 'User: <SELECT name="userid">'.$weekreport->get_employees($userid, $key="lastname").'</SELECT>';
+            $content[] = '<input type="submit" value="'.atktext("refresh").'">';
+            $content[] = '</form>';
+            $content[] = "<h2>$title</h2>\n";
         }
 
         if ($userid!="all") {
@@ -366,9 +366,9 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                                </tr>\n";
             foreach ($hours_table['time_balance'] as $iuserid => &$userdata)
             {
-                $content .= "<h3>$iuserid - ".$userdata['fullname']."</h3>\n";
-                $content .= "<table border='1'>\n";
-                $content .= $banca_head;
+                $content[] = "<h3>$iuserid - ".$userdata['fullname']."</h3>\n";
+                $content[] = "<table border='1'>\n";
+                $content[] = $banca_head;
 
                 $userdata['date_start']['balance'] = $this->overtime_node->getBalance($date_start, $userdata['id'], true);
                 $userdata['date_end']['balance'] = $this->overtime_node->getBalance($date_end, $userdata['id']);
@@ -386,19 +386,19 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                     }
                     $abstime = strtotime($date);
 
-                    $content .= "<tr style='background: $bgcolor'>";
-                    $content .= "<td>$iuserid</td>";
-                    $content .= "<td>".$userdata['fullname']."</td>";
+                    $content[] = "<tr style='background: $bgcolor'>";
+                    $content[] = "<td>$iuserid</td>";
+                    $content[] = "<td>".$userdata['fullname']."</td>";
                     if ( $this->holidays_node->isHoliday($date) ) {
-                        $content .= "<td><b><i>".strftime("%Y-%m-%d %a", $abstime)."</i></b></td>";
+                        $content[] = "<td><b><i>".strftime("%Y-%m-%d %a", $abstime)."</i></b></td>";
                     } elseif ( !($activity['time_contract'] > 0) ) {
-                        $content .= "<td><strike>".strftime("%Y-%m-%d %a", $abstime)."</strike></td>";
+                        $content[] = "<td><strike>".strftime("%Y-%m-%d %a", $abstime)."</strike></td>";
                     } else {
-                        $content .= "<td>".strftime("%Y-%m-%d %a", $abstime)."</td>";
+                        $content[] = "<td>".strftime("%Y-%m-%d %a", $abstime)."</td>";
                     }
                     if ( $activity['lavoro'] or ($activity['time_contract'] > 0) ) {
                         $userdata['tot_contract'] += $activity['time_contract'];
-                        $content .= "<td align='right' title='".float2str($userdata['tot_contract'])."'>".float2str($activity['time_contract'])."</td>";
+                        $content[] = "<td align='right' title='".float2str($userdata['tot_contract'])."'>".float2str($activity['time_contract'])."</td>";
                         if ($banca_ore > 0) {
                             $ore_registro = $activity['time_contract'] - $activity['time_malattia'] - $activity['time_ferie']
                                             - $activity['time_permessi_certificati'] - $activity['time_allattamento'] - $activity['time_donazioni_sangue'];
@@ -407,39 +407,39 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                             $ore_registro = 0.0;
                         }
                         $banca_ore -= $ore_registro;
-                        $content .= "<td align='right'>".float2str($ore_registro)."</td>";
+                        $content[] = "<td align='right'>".float2str($ore_registro)."</td>";
                         $activity['time_registro'] = $ore_registro;
                         $userdata['tot_registro'] += $ore_registro;
                     } else {
-                        $content .= "<td align='right'>&nbsp</td>"; // time_contract
-                        $content .= "<td align='right'>&nbsp</td>"; // ore_registro
+                        $content[] = "<td align='right'>&nbsp</td>"; // time_contract
+                        $content[] = "<td align='right'>&nbsp</td>"; // ore_registro
                     }
                     if ( $activity['lavoro'] or ($activity['time_contract'] > 0) )
                     {
                         $time_other = $activity['time_malattia'] + $activity['time_ferie'] + $activity['time_permessi_certificati'] +
                                       $activity['time_allattamento'] + $activity['time_donazioni_sangue'];
                         if ( $holiday and ($time_other>0) ) {$style="color: red";} else {$style="";}
-                        $content .= "<td align='right' style='$style' title='".float2str($activity['totale_parziale_worked'])."'>".float2str($activity['time_worked'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_malattia'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_ferie'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_permessi_certificati'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_allattamento'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_donazioni_sangue'])."</td>";
-                        $content .= "<td align='right' style='$style'>".float2str($activity['time_d20'])."</td>";
-                        $content .= "<td align='right' style='$style'>".$activity['tickets']."</td>";
+                        $content[] = "<td align='right' style='$style' title='".float2str($activity['totale_parziale_worked'])."'>".float2str($activity['time_worked'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_malattia'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_ferie'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_permessi_certificati'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_allattamento'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_donazioni_sangue'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".float2str($activity['time_d20'])."</td>";
+                        $content[] = "<td align='right' style='$style'>".$activity['tickets']."</td>";
                     }
                     else
                     {
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
-                        $content .= "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
+                        $content[] = "<td align='right'>&nbsp</td>";
                     }
-                    $content .= "</tr>\n";
+                    $content[] = "</tr>\n";
                     $ore_mancanti = $activity['time_contract'] - $activity['time_registro'] - $activity['time_malattia'] - $activity['time_ferie']
                                     - $activity['time_permessi_certificati'] - $activity['time_allattamento'] - $activity['time_donazioni_sangue'];
                     if ($ore_mancanti > 0) {
@@ -449,86 +449,86 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                         $activity['time_missing'] = 0.0;
                     }
                 } // fine loop su tutti i giorni selezionati
-                $content .= $banca_head;
-                $content .= "<tr><td>$iuserid</td><td>".$userdata['fullname']."</td><th>Totale</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_contract'])."</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_registro'])."</th>";
+                $content[] = $banca_head;
+                $content[] = "<tr><td>$iuserid</td><td>".$userdata['fullname']."</td><th>Totale</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_contract'])."</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_registro'])."</th>";
                 $overtime_balance = $userdata['date_start']['balance']['balance'] + $userdata['tot_worked'] - $userdata['tot_registro'];
-                $content .= "<th align='right' title='banca ore: ".float2str($overtime_balance)."'>";
-                    $content .= float2str($userdata['tot_worked'])."</th>";
+                $content[] = "<th align='right' title='banca ore: ".float2str($overtime_balance)."'>";
+                    $content[] = float2str($userdata['tot_worked'])."</th>";
                 if ($overtime_balance > 0) {
                     $userdata['overtime_balance'] = $overtime_balance;
                 } else {
                     $userdata['overtime_balance'] = 0.0;
                 }
-                $content .= "<th align='right'>".float2str($userdata['tot_malattia'])."</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_ferie'])."</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_permessi_certificati'])."</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_allattamento'])."</th>";
-                $content .= "<th align='right'>".float2str($userdata['tot_donazioni_sangue'])."</th>";
-                $content .= "<th align='right' title='".float2str($userdata['tot_d20'])."'>";
-                    $content .= float2str(min($userdata['tot_d20'], $userdata['tot_worked']*0.2))."</th>";
-                $content .= "<th align='right'>".$userdata['tot_tickets']."</th>";
-                $content .= "</tr>\n";
-                $content .= "<tr><td colspan='13'>$title<dl>\n";
-                $content .= "<b>$iuserid:</b> ".$userdata['fullname']."<br>";
-                $content .= "<b>Banca ore al ".$timesummary["date_start"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_start'])."<br>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_malattia'])."</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_ferie'])."</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_permessi_certificati'])."</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_allattamento'])."</th>";
+                $content[] = "<th align='right'>".float2str($userdata['tot_donazioni_sangue'])."</th>";
+                $content[] = "<th align='right' title='".float2str($userdata['tot_d20'])."'>";
+                    $content[] = float2str(min($userdata['tot_d20'], $userdata['tot_worked']*0.2))."</th>";
+                $content[] = "<th align='right'>".$userdata['tot_tickets']."</th>";
+                $content[] = "</tr>\n";
+                $content[] = "<tr><td colspan='13'>$title<dl>\n";
+                $content[] = "<b>$iuserid:</b> ".$userdata['fullname']."<br>";
+                $content[] = "<b>Banca ore al ".$timesummary["date_start"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_start'])."<br>";
                 /*
                 Aggiunto link per permettere di modificare il quantitativo di ore
                 presenti in banca ore dopo aver stabilito con il dipendente quante
                 di queste devono essere pagate come straordinari e quante messe da
                 parte.
                 */
-                $content .= "<b>Banca ore al ".$timesummary["date_end"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_end'])."<br>";
+                $content[] = "<b>Banca ore al ".$timesummary["date_end"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_end'])."<br>";
                 //atkdebug("userdata['overtime_balance']=".$userdata['overtime_balance']);
                 //atkdebug("userdata['date_end']['balance']['balance']=".$userdata['date_end']['balance']['balance']);
                 $userdata['straordinari'] = max($userdata['overtime_balance'] - max($userdata['date_end']['balance']['balance'], 0.0), 0.0);
-                $content .= "<b>Straordinari:</b> ".float2str($userdata['straordinari'])."<br>";
-                $content .= "<b>Ore Previste:</b> ".float2str($userdata['tot_contract'])."<br>";
-                $content .= "<b>Ore Registro:</b> ".float2str($userdata['tot_registro'])."<br>";
-                $content .= "<b>Ore Lavorate:</b> <a title='".float2str($userdata['tot_worked'] - $userdata['tot_registro'])."'>";
-                    $content .= float2str($userdata['tot_worked'])."</a><br>";
-                $content .= "<b>Malattia:</b> ".float2str($userdata['tot_malattia'])."<br>";
-                $content .= "<b>Ferie:</b> <a title='segnate: ".float2str($userdata['tot_ferie'])." mancanti: ".float2str($userdata['tot_missing'])."'>".float2str($userdata['tot_ferie'] + $userdata['tot_missing'])."</a><br>";
-                $content .= "<b>Permessi certificati:</b> ".float2str($userdata['tot_permessi_certificati'])."<br>";
-                $content .= "<b>Allattamento:</b> ".float2str($userdata['tot_allattamento'])."<br>";
-                $content .= "<b>Donazioni sangue:</b> ".float2str($userdata['tot_donazioni_sangue'])."<br>";
-                $content .= "<b>Develer20:</b> <a title='".float2str($userdata['tot_d20'])."'>";
-                    $content .= float2str(min($userdata['tot_d20'], $userdata['tot_worked']*0.2))."</a><br>";
-                $content .= "<b>Tickets:</b> ".$userdata['tot_tickets']."<br>";
+                $content[] = "<b>Straordinari:</b> ".float2str($userdata['straordinari'])."<br>";
+                $content[] = "<b>Ore Previste:</b> ".float2str($userdata['tot_contract'])."<br>";
+                $content[] = "<b>Ore Registro:</b> ".float2str($userdata['tot_registro'])."<br>";
+                $content[] = "<b>Ore Lavorate:</b> <a title='".float2str($userdata['tot_worked'] - $userdata['tot_registro'])."'>";
+                    $content[] = float2str($userdata['tot_worked'])."</a><br>";
+                $content[] = "<b>Malattia:</b> ".float2str($userdata['tot_malattia'])."<br>";
+                $content[] = "<b>Ferie:</b> <a title='segnate: ".float2str($userdata['tot_ferie'])." mancanti: ".float2str($userdata['tot_missing'])."'>".float2str($userdata['tot_ferie'] + $userdata['tot_missing'])."</a><br>";
+                $content[] = "<b>Permessi certificati:</b> ".float2str($userdata['tot_permessi_certificati'])."<br>";
+                $content[] = "<b>Allattamento:</b> ".float2str($userdata['tot_allattamento'])."<br>";
+                $content[] = "<b>Donazioni sangue:</b> ".float2str($userdata['tot_donazioni_sangue'])."<br>";
+                $content[] = "<b>Develer20:</b> <a title='".float2str($userdata['tot_d20'])."'>";
+                    $content[] = float2str(min($userdata['tot_d20'], $userdata['tot_worked']*0.2))."</a><br>";
+                $content[] = "<b>Tickets:</b> ".$userdata['tot_tickets']."<br>";
 
                 $lock_type = Locking::getLockType($userdata['id'], $date_end);
                 if ($lock_type === "")
                 {
-                    $content .= '<div class="atkmessages_general"><form action="dispatch.php" method="get" name="entryform">';
+                    $content[] = '<div class="atkmessages_general"><form action="dispatch.php" method="get" name="entryform">';
                     if ($userdata['date_end']['balance']['balance'] > 0)
                     {
-                        $content .= 'In banca ore ci sono '.$userdata['date_end']['balance']['balance'].' ore';
-                        $content .= '<button name="option" type="submit" value="store">'.atktext("Conferma mese e lascia tutto in banca ore").'</button>';
-                        $content .= '<button name="option" type="submit" value="empty">'.atktext("Conferma mese e riscatta tutte le ore").'</button>';
+                        $content[] = 'In banca ore ci sono '.$userdata['date_end']['balance']['balance'].' ore';
+                        $content[] = '<button name="option" type="submit" value="store">'.atktext("Conferma mese e lascia tutto in banca ore").'</button>';
+                        $content[] = '<button name="option" type="submit" value="empty">'.atktext("Conferma mese e riscatta tutte le ore").'</button>';
                     } else if ($userdata['date_end']['balance']['balance'] < 0) {
-                        $content .= 'Banca ore in negativo, le ore mancanti verranno prese dalle ferie';
-                        $content .= '<button name="option" type="submit" value="empty">'.atktext("Conferma mese").'</button>';
+                        $content[] = 'Banca ore in negativo, le ore mancanti verranno prese dalle ferie';
+                        $content[] = '<button name="option" type="submit" value="empty">'.atktext("Conferma mese").'</button>';
                     } else {
-                        $content .= 'Banca ore in pari';
-                        $content .= '<button name="option" type="submit" value="empty">'.atktext("Conferma mese").'</button>';
+                        $content[] = 'Banca ore in pari';
+                        $content[] = '<button name="option" type="submit" value="empty">'.atktext("Conferma mese").'</button>';
                     }
-                    $content .= '<input type="hidden" name="userid" value="'.$userdata['id'].'">';
-                    $content .= '<input type="hidden" name="balance_date" value="'.$date_end.'">';
-                    $content .= '<input type="hidden" name="atknodetype" value="'.$this->atkNodeType().'">';
-                    $content .= '<input type="hidden" name="atkaction" value="bancaore">';
-                    $content .= '</form></div>';
+                    $content[] = '<input type="hidden" name="userid" value="'.$userdata['id'].'">';
+                    $content[] = '<input type="hidden" name="balance_date" value="'.$date_end.'">';
+                    $content[] = '<input type="hidden" name="atknodetype" value="'.$this->atkNodeType().'">';
+                    $content[] = '<input type="hidden" name="atkaction" value="bancaore">';
+                    $content[] = '</form></div>';
                 } else {
-                    $content .= "<div class='atkmessages_success'>Mese confermato, chiedere ad un admin di sbloccarlo se ci sono errori da correggere.</div>";
+                    $content[] = "<div class='atkmessages_success'>Mese confermato, chiedere ad un admin di sbloccarlo se ci sono errori da correggere.</div>";
                 }
 
-                $content .= "</dl></td></tr>\n";
-                $content .= "</table>\n";
+                $content[] = "</dl></td></tr>\n";
+                $content[] = "</table>\n";
             }
         } else {
-            $content .= "<p><i>Sono stati selezionati tutti gli utenti, e' possibile solo scaricare il foglio di calcolo.</i></p>";
+            $content[] = "<p><i>Sono stati selezionati tutti gli utenti, e' possibile solo scaricare il foglio di calcolo.</i></p>";
             $users = $this->get_active_employees($timesummary["date_start"], $timesummary["date_end"]);
-            $content .= "<ul>";
+            $content[] = "<ul>";
             foreach($users as $iuserid) {
                 $lock = !(Locking::getLockType($iuserid, $date_end) === "");
                 $message = $lock ? "Bloccate" : "da bloccare";
@@ -536,26 +536,26 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $userinfo = $this->weekreport_node->get_employee($iuserid);
                 if ($userinfo['id'] != $iuserid)
                     continue;
-                $content .= "<li><span style='$style'>" . $userinfo['lastname']." ".$userinfo['firstname'] . "</span> - $message</li>";
+                $content[] = "<li><span style='$style'>" . $userinfo['lastname']." ".$userinfo['firstname'] . "</span> - $message</li>";
             }
-            $content .= "</ul>";
+            $content[] = "</ul>";
         }
 
-        $content .= "<p>Pagina creata il ".date_create()->format("Y-m-d")."</p>\n";
+        $content[] = "<p>Pagina creata il ".date_create()->format("Y-m-d")."</p>\n";
 
-        $content .= '<form action="dispatch.php" method="get" name="entryform">';
-        $content .= '<input type="submit" value="'.atktext("Esporta").'">';
-        $content .= '<input type="hidden" name="date_start" value="'.$timesummary["date_start"].'">';
-        $content .= '<input type="hidden" name="atknodetype" value="'.$this->atkNodeType().'">';
-        $content .= '<input type="hidden" name="atkaction" value="export">';
-        $content .= '</form>';
+        $content[] = '<form action="dispatch.php" method="get" name="entryform">';
+        $content[] = '<input type="submit" value="'.atktext("Esporta").'">';
+        $content[] = '<input type="hidden" name="date_start" value="'.$timesummary["date_start"].'">';
+        $content[] = '<input type="hidden" name="atknodetype" value="'.$this->atkNodeType().'">';
+        $content[] = '<input type="hidden" name="atkaction" value="export">';
+        $content[] = '</form>';
 
         if (!$export) {
             $page = &$this->getPage();
             $ui = &$this->getUi();
-            $page->addContent($ui->renderBox(array("title"=>$hours_table['title'], "content"=>$content)));
+            $page->addContent($ui->renderBox(array("title"=>$hours_table['title'], "content"=>implode('', $content))));
         } else {
-            $content = null;
+            unset($content);
             return $hours_table;
         }
 
