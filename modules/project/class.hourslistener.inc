@@ -75,7 +75,7 @@
      * @param array $phase Phase record for which the planned hours should be evaluated
      * @return boolean True if the phase is overtime, false if not
      */
-    function isPhaseOvertime($phase)
+    function isPhaseOvertime($phase, $hours_before)
     {
       //return false;
       $hours_planning = null;
@@ -89,8 +89,7 @@
         return false;
       }
 
-      $HOURS_BEFORE = 8;
-      if($phase["spend_hours"]*60 > $hours_planning-(60*$HOURS_BEFORE))
+      if($phase["spend_hours"]*60 > $hours_planning-(60*$hours_before))
       {
         return true;
       } else {
@@ -153,7 +152,8 @@
       $phasenotstarted = !$this->isPhaseStarted($phaserecords[0]);
 
       // Is the phase overtime?
-      $phaseovertime = $this->isPhaseOvertime($phaserecords[0]);
+      $phaseovertime = $this->isPhaseOvertime($phaserecords[0], 8);
+      $phasenearovertime = $this->isPhaseOvertime($phaserecords[0], 8*7);
 
       // If there is a reason to send a mail (the deliverable is not complete when adding the
       if ($deliverableincomplete || $phasenotstarted || $phaseovertime)
@@ -210,7 +210,7 @@
           $body.= atktext("enddate", "project") . ": " . $this->arr2str($phaserecords[0]["enddate"]) . "\r\n";
         }
 
-        if ($phaseovertime)
+        if ($phasenearovertime or $phaseovertime)
         {
           $body.= atktext("the_phase_is_almost_overtime", "project") . ":\r\n";
           $body.= atktext("name", "project") . ": " . $phaserecords[0]["name"] . "\r\n";
@@ -220,9 +220,11 @@
         }
 
         // Send the mail
-        usermail($to_employee, $subject, $body);
-        usermail($to_coordinator, $subject, $body);
-        usermail(atkconfig("mail_administrative_staff"), $subject, $body);
+        // if ($phaseovertime) {
+        //   usermail($to_employee, $subject, $body);
+        // }
+        // usermail($to_coordinator, $subject, $body);
+        // usermail(atkconfig("mail_administrative_staff"), $subject, $body);
       }
       
       return true;
