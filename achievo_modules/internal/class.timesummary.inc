@@ -97,6 +97,7 @@ class timesummary extends atkNode
                 SELECT
                     person.id,
                     person.userid,
+                    person.firstname, person.lastname,
                     project.name AS prj,
                     sum(hours.time)/60.0 as ore,
                     max(entrydate) as lastmod,
@@ -118,7 +119,8 @@ class timesummary extends atkNode
         if (!$this->allowed("any_user")) $filter.= " AND hours.userid ='$userid' ";
         $groupby = "
                 GROUP BY lower(person.userid), lower(prj), billable
-                ORDER BY lower(person.userid), lower(prj), billable";
+                ORDER BY lower(person.lastname), lower(person.firstname),
+                         lower(person.userid), lower(prj), billable";
 
         $sql = $select . $filter . $filter_nopay . $groupby;
 
@@ -166,7 +168,7 @@ class timesummary extends atkNode
         $content .= "<table><tr><td>";
             // Tabella ore lavorate per progetto
             $content .= "<table border='1'>\n";
-            $content .= "<tr><th>User Id</th><th>Progetto</th><th>Ore</th><th>Euro</th></tr>\n";
+            $content .= "<tr><th>Persona</th><th>Progetto</th><th>Ore</th><th>Euro</th></tr>\n";
             $progetti = array();
             $gprogetti = array();
             $persone = array();
@@ -196,6 +198,7 @@ class timesummary extends atkNode
                 $gprogetti[$r['gprj']]['lastmod'] = max($gprogetti[$r['gprj']]['lastmod'], $r['lastmod']);
                 $persone[$r['userid']]['ore'] += $r['ore'];
                 $persone[$r['userid']]['lastmod'] = max($persone[$r['userid']]['lastmod'], $r['lastmod']);
+                $persone[$r['userid']]['fullname'] = $r['lastname']." ".$r['firstname'];
 
                 atkdebug("Euro ora loop: ".var_export($r, 1)." incr ore prj:".var_export($progetti[$r['prj']], 1).", user:".var_export($persone[$r['userid']], 1));
 
@@ -240,7 +243,7 @@ class timesummary extends atkNode
                 } else {
                     $content .= "<tr style='background: #DDDDC0'>";
                 }
-                $content .= "<td>".$r['userid']."</td>";
+                $content .= "<td title='".$r['userid']."'>".$persone[$r['userid']]['fullname']."</td>";
                 $content .= "<td>".$r['prj']."</td>";
                 $content .= "<td align='right'>".str_number_format($r['ore'], 2)."</td>";
                 $content .= "<td align='right'>".str_number_format($r['euro'], 2)."</td>";
@@ -258,7 +261,7 @@ class timesummary extends atkNode
                     $content .= "<tr>";
                 else
                     $content .= "<tr style='background: #DDDDC0'>";
-                $content .= "<th>$key</th>";
+                $content .= "<th title='$key'>".$pers['fullname']."</th>";
                 $content .= "<td align='right'>".str_number_format($pers['ore'], 2)."</td>";           // ore
                 $content .= "<td align='right'>".str_number_format($pers['euro_ora'], 2)."</td>";      // euro/ora
                 $content .= "<td align='right'>".str_number_format($pers['euro'], 2)."</td>";          // euro
