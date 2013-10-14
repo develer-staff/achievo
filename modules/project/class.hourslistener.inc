@@ -224,7 +224,7 @@
         //   usermail($to_employee, $subject, $body);
         // }
         // usermail($to_coordinator, $subject, $body);
-        // usermail(atkconfig("mail_administrative_staff"), $subject, $body);
+        usermail(atkconfig("mail_administrative_staff"), $subject, $body);
       }
       
       return true;
