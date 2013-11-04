@@ -13,7 +13,9 @@ atkimport("module.timereg.locking");
 
 function get_IVA($date)
 {
-  if ($date >= "2011-09-17")
+  if ($date >= "2013-10-01")
+    return 0.22;
+  elseif ($date >= "2011-09-17")
     return 0.21;
   else
     return 0.2;
