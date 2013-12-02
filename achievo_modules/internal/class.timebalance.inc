@@ -431,13 +431,17 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $content[] = $banca_head;
                 $content[] = "<tr><td>$iuserid</td><td>".$userdata['fullname']."</td><th>Totale</th>";
                 $content[] = "<th align='right'>".float2str($userdata['tot_contract'])."</th>";
-                $overtime_balance = $userdata['date_start']['balance']['balance'] + $userdata['tot_worked'];
+                $ore_mancanti = $userdata['tot_contract'] - ($userdata['tot_worked'] + $userdata['tot_ferie'] + $userdata['tot_malattia'] +
+                                $userdata['tot_permessi_certificati'] + $userdata['tot_allattamento'] + $userdata['tot_donazioni_sangue']);
+                $overtime_balance = $userdata['date_start']['balance']['balance'] - $ore_mancanti;
                 $content[] = "<th align='right' title='banca ore: ".float2str($overtime_balance)."'>";
                     $content[] = float2str($userdata['tot_worked'])."</th>";
                 if ($overtime_balance > 0) {
                     $userdata['overtime_balance'] = $overtime_balance;
+                    $userdata['subtime_balance'] = 0.0;
                 } else {
                     $userdata['overtime_balance'] = 0.0;
+                    $userdata['subtime_balance'] = -$overtime_balance;
                 }
                 $content[] = "<th align='right'>".float2str($userdata['tot_malattia'])."</th>";
                 $content[] = "<th align='right'>".float2str($userdata['tot_ferie'])."</th>";
@@ -465,8 +469,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $content[] = "<b>Ore Previste:</b> ".float2str($userdata['tot_contract'])."<br>";
                 $content[] = "<b>Ore Lavorate:</b> ".float2str($userdata['tot_worked'])."<br>";
                 $content[] = "<b>Malattia:</b> ".float2str($userdata['tot_malattia'])."<br>";
-                $ore_mancanti = $userdata['tot_contract'] - $userdata['tot_worked'] - $userdata['tot_malattia'] - $userdata['tot_permessi_certificati'] - $userdata['tot_allattamento'] - $userdata['tot_donazioni_sangue'];
-                $content[] = "<b>Ferie:</b> <a title='segnate: ".float2str($userdata['tot_ferie'])." mancanti: ".float2str($ore_mancanti)."'>".float2str($userdata['tot_ferie'] + $ore_mancanti)."</a><br>";
+                $content[] = "<b>Ferie:</b> <a title='segnate: ".float2str($userdata['tot_ferie'])." mancanti: ".float2str($userdata['subtime_balance'])."'>".float2str($userdata['tot_ferie'] + $userdata['subtime_balance'])."</a><br>";
                 $content[] = "<b>Permessi certificati:</b> ".float2str($userdata['tot_permessi_certificati'])."<br>";
                 $content[] = "<b>Allattamento:</b> ".float2str($userdata['tot_allattamento'])."<br>";
                 $content[] = "<b>Donazioni sangue:</b> ".float2str($userdata['tot_donazioni_sangue'])."<br>";
