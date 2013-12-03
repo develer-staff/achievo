@@ -464,8 +464,8 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 $content[] = "<b>Banca ore al ".$timesummary["date_end"].":</b> ".$this->overtime_node->getOvertimeLink($userdata['date_end'])."<br>";
                 //atkdebug("userdata['overtime_balance']=".$userdata['overtime_balance']);
                 //atkdebug("userdata['date_end']['balance']['balance']=".$userdata['date_end']['balance']['balance']);
-                $userdata['straordinari'] = max($userdata['overtime_balance'] - max($userdata['date_end']['balance']['balance'], 0.0), 0.0);
-                $content[] = "<b>Straordinari:</b> ".float2str($userdata['straordinari'])."<br>";
+                $userdata['tot_straordinari'] = max($userdata['overtime_balance'] - max($userdata['date_end']['balance']['balance'], 0.0), 0.0);
+                $content[] = "<b>Straordinari:</b> ".float2str($userdata['tot_straordinari'])."<br>";
                 $content[] = "<b>Ore Previste:</b> ".float2str($userdata['tot_contract'])."<br>";
                 $content[] = "<b>Ore Lavorate:</b> ".float2str($userdata['tot_worked'])."<br>";
                 $content[] = "<b>Malattia:</b> ".float2str($userdata['tot_malattia'])."<br>";
@@ -604,15 +604,12 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 if ($userdata['tot_donazioni_sangue'] > 0)
                     $sum_rows++;
 
-                $counter = -1;
                 foreach ($userdata['activity'] as $date => $activity)
                 {
-                    $counter++;
                     if ($header) {
                         $abstime = strtotime($date);
                         $totali .= strftime(";%d %a", $abstime);
                     }
-                    $value = fformat($activity['time_worked']);
                     $ore_ordinarie .= ";-1=".coalesce(fformat($activity['time_worked']));
                     $permessi_certificati .= ";-1=".coalesce(fformat($activity['time_permessi_certificati']));
                     $allattamento .= ";-1=".coalesce(fformat($activity['time_allattamento']));
@@ -627,13 +624,16 @@ GROUP BY id, userid, firstname, lastname, activitydate;
                 }
 
                 $head_ore_ordinarie = "*".$userdata['fullname']."*;-1=SUM(RC[2]:RC[33]);Ore ordinarie";
-                $head_malattia = fformat($userdata['tot_contract']).";-1=SUM(RC[2]:RC[33]);Malattia";
+                $head_malattia = "Banca ore: ".$userdata['date_start']['balance']['balance']." → ".$userdata['date_end']['balance']['balance'].";-1=SUM(RC[2]:RC[33]);Malattia";
+                $head_straordinari = ";".fformat($userdata['tot_straordinari']).";Straordinari";
                 $head_permessi_certificati = ";-1=SUM(RC[2]:RC[33]);Permessi Certificati";
                 $head_allattamento = ";-1=SUM(RC[2]:RC[33]);Allattamento";
                 $head_donazioni_sangue = ";-1=SUM(RC[2]:RC[33]);Donazioni sangue";
 
                 $excel->add_row(explode(";", $head_ore_ordinarie.$ore_ordinarie));
                 $excel->add_row(explode(";", $head_malattia.$malattia));
+                if ($userdata['tot_straordinari'] > 0)
+                    $excel->add_row(explode(";", $head_straordinari));
                 if ($userdata['tot_allattamento'] > 0)
                     $excel->add_row(explode(";", $head_allattamento.$allattamento));
                 if ($userdata['tot_permessi_certificati'] > 0)
@@ -657,6 +657,7 @@ GROUP BY id, userid, firstname, lastname, activitydate;
         else
             $exporter->export($xml, strftime("Develer-%Y-%B-$username", $report_time), "xls");
     }
+
     function action_bancaore(&$handler)
     {
         $userid = $this->m_postvars['userid'];
