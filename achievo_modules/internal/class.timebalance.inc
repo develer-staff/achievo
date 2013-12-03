@@ -45,7 +45,7 @@ atkImport("modules.scheduler.scheduler_holidays");
 atkImport("modules.reports.weekreport");
 atkimport("module.timereg.locking");
 
-setlocale(LC_ALL, 'it_IT');
+setlocale(LC_ALL, 'it_IT.utf8', 'it_IT', 'it');
 
 function str_number_format($var, $digits)
 {
